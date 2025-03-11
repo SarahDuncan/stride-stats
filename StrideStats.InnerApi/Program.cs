@@ -1,6 +1,5 @@
 using StrideStats.InnerApi.AppStart;
 using System.Text.Json.Serialization;
-using Application.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
