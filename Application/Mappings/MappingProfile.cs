@@ -1,7 +1,9 @@
-﻿using Application.Queries.GetAthlete;
-using Application.Queries.GetAthlete.ResultModels;
+﻿using Application.Queries.Common;
+using Application.Queries.GetAthlete;
+using Application.Queries.GetAthletesStats;
 using AutoMapper;
 using Domain.Responses;
+using Domain.Responses.Models;
 
 namespace Application.Mappings
 {
@@ -10,9 +12,8 @@ namespace Application.Mappings
         public MappingProfile()
         {
             CreateMap<GetAthleteApiResponse, GetAthleteQueryResult>();
-            CreateMap<Domain.Responses.Models.SummaryClub, SummaryClub>();
-            CreateMap<Domain.Responses.Models.SummaryGear, SummaryGear>();
-            CreateMap<Domain.Responses.Models.ActivityTypeEnum, ActivityTypeEnum>();
+            CreateMap<GetAthletesStatsApiResponse, GetAthletesStatsQueryResult>();
+            CreateMap<Totals, TotalsResult>();
         }
     }
 }
