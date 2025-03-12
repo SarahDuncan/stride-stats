@@ -3,6 +3,7 @@ using Application.Mappings;
 using Application.Queries.GetAthlete;
 using Domain.Interfaces.Api;
 using System.Net.Http.Headers;
+using System.Reflection;
 
 namespace StrideStats.InnerApi.AppStart
 {
@@ -22,9 +23,16 @@ namespace StrideStats.InnerApi.AppStart
             services.AddAutoMapper(typeof(MappingProfile));
 
             // Add Swagger
-            services.AddSwaggerGen(c =>
+            services.AddSwaggerGen(options =>
             {
-                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "StrideStats API", Version = "v1" });
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+                { 
+                    Title = "StrideStats API", 
+                    Version = "v1" ,
+                    Description = "Consumes the Strava V3 API"
+                });
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+                options.IncludeXmlComments(xmlPath);
             });
         }
 

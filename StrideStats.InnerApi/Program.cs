@@ -22,10 +22,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     app.UseSwagger();
-    app.UseSwaggerUI(app =>
-    {
-        app.SwaggerEndpoint("/swagger/v1/swagger.json", "Stride Stats API");
-    });
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
