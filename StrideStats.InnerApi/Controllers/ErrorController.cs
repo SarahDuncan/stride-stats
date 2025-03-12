@@ -10,13 +10,13 @@ namespace StrideStats.InnerApi.Controllers
     [AllowAnonymous]
     public class ErrorController : ControllerBase
     {
-        [HttpGet]
-        public IActionResult ErrorInProduction()
+        [Route("error")]
+        public IActionResult HandleError()
         {
             return Problem();
         }
 
-        [Route("development-error")]
+        [Route("error-development")]
         public IActionResult ErrorInDevelopment([FromServices] IHostEnvironment hostEnvironment)
         {
             if (!hostEnvironment.IsDevelopment())
@@ -25,7 +25,10 @@ namespace StrideStats.InnerApi.Controllers
             }
 
             var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>();
-            return Problem(detail: exceptionHandlerFeature?.Error.InnerException?.StackTrace, title: exceptionHandlerFeature?.Error.Message);
+
+            return Problem(
+                detail: exceptionHandlerFeature?.Error.InnerException?.StackTrace, 
+                title: exceptionHandlerFeature?.Error.Message);
         }
     }
 }
