@@ -2,8 +2,6 @@
 using Application.Mappings;
 using Application.Queries.GetAthlete;
 using Domain.Interfaces.Api;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using StrideStats.InnerApi.Problems;
 using System.Net.Http.Headers;
 using System.Reflection;
 
@@ -36,9 +34,6 @@ namespace StrideStats.InnerApi.AppStart
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
                 options.IncludeXmlComments(xmlPath);
             });
-
-            // Add ProblemDetailsFactory
-            services.AddTransient<ProblemDetailsFactory, SampleProblemsFactory>();
         }
 
         public class AuthorizationHandler : DelegatingHandler

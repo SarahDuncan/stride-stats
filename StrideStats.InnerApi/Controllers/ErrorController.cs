@@ -8,16 +8,16 @@ namespace StrideStats.InnerApi.Controllers
     [Route("[controller]")]
     [ApiController]
     [AllowAnonymous]
-    public class ErrorHandlerController : ControllerBase
+    public class ErrorController : ControllerBase
     {
-        [Route("error")]
-        public IActionResult Error()
+        [HttpGet]
+        public IActionResult ErrorInProduction()
         {
             return Problem();
         }
 
-        [Route("error-development")]
-        public IActionResult HandleErrorDevelopment([FromServices] IHostEnvironment hostEnvironment)
+        [Route("development-error")]
+        public IActionResult ErrorInDevelopment([FromServices] IHostEnvironment hostEnvironment)
         {
             if (!hostEnvironment.IsDevelopment())
             {
@@ -25,8 +25,7 @@ namespace StrideStats.InnerApi.Controllers
             }
 
             var exceptionHandlerFeature = HttpContext.Features.Get<IExceptionHandlerFeature>();
-
-            return Problem(detail: exceptionHandlerFeature.Error.InnerException.StackTrace, title: exceptionHandlerFeature.Error.Message);
+            return Problem(detail: exceptionHandlerFeature?.Error.InnerException?.StackTrace, title: exceptionHandlerFeature?.Error.Message);
         }
     }
 }

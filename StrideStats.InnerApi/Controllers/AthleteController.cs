@@ -46,7 +46,7 @@ namespace StrideStats.InnerApi.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while retrieving the athlete.");
-                throw new Exception($"An error occurred while retrieving the athlete. Exception: {ex.Message}", ex);
+                throw new Exception($"An error occurred while retrieving the athlete.", ex);
             }
         }
 
@@ -71,7 +71,7 @@ namespace StrideStats.InnerApi.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while retrieving the athlete stats.");
-                throw new Exception($"An error occurred while retrieving the athlete stats. Exception: {ex.Message}", ex);
+                throw new Exception($"An error occurred while retrieving the athlete stats.", ex);
             }
         }
     }

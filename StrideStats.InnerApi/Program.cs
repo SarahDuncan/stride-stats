@@ -1,3 +1,4 @@
+using Hellang.Middleware.ProblemDetails;
 using StrideStats.InnerApi.AppStart;
 using System.Text.Json.Serialization;
 
@@ -15,6 +16,9 @@ builder.Services.AddControllers()
 // Add service registrations
 builder.Services.AddServiceRegistration(builder.Configuration);
 
+// Add ProblemDetails, further info in this article https://dev.to/andrewlocknet/handling-web-api-exceptions-with-problemdetails-middleware-47jb
+ProblemDetailsExtensions.AddProblemDetails(builder.Services);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,12 +26,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.UseExceptionHandler("/errorhandler/error-development");
+    app.UseExceptionHandler("/error/development-error");
 }
 else
 {
-    app.UseExceptionHandler("/errorhandler/error");
+    app.UseExceptionHandler("/error");
 }
+
+app.UseProblemDetails();
 
 app.UseHttpsRedirection();
 
