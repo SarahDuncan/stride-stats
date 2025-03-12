@@ -21,18 +21,23 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI(app =>
+    {
+        app.SwaggerEndpoint("/swagger/v1/swagger.json", "Stride Stats API");
+    });
 }
-
-app.UseSwagger();
-app.UseSwaggerUI(app =>
-{
-    app.SwaggerEndpoint("/swagger/v1/swagger.json", "Stride Stats API");
-});
 
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/swagger");
+    return Task.CompletedTask;
+});
 
 app.Run();
