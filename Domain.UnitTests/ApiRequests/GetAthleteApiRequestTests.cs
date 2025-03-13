@@ -1,4 +1,5 @@
 ﻿using Domain.Requests;
+using FluentAssertions;
 
 namespace Domain.UnitTests.ApiRequests
 {
@@ -7,11 +8,11 @@ namespace Domain.UnitTests.ApiRequests
         [Fact]
         public void GetUrl_ReturnsCorrectUrl()
         {
-            var request = new GetAthleteApiRequest();
+            var getAthleteApiRequest = new GetAthleteApiRequest();
 
-            var url = request.GetUrl;
+            var getUrl = getAthleteApiRequest.GetUrl;
 
-            Assert.Equal("athlete", url);
+            getUrl.Should().BeEquivalentTo("athlete");
         }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using Application.Queries.GetAthlete;
+using AutoFixture;
+using AutoFixture.AutoMoq;
 using AutoMapper;
 using Domain.Interfaces.Api;
 using Domain.Requests;
 using Domain.Responses;
+using FluentAssertions;
 using Moq;
 
 namespace Application.UnitTests.Queries
@@ -12,45 +15,51 @@ namespace Application.UnitTests.Queries
         private readonly Mock<IApiClient> _mockApiClient;
         private readonly Mock<IMapper> _mockMapper;
         private readonly GetAthleteQueryHandler getAthleteQueryHandler;
+        private readonly IFixture _fixture;
 
         public GetAtheleteQueryHandlerTests()
         {
-            _mockApiClient = new Mock<IApiClient>();
-            _mockMapper = new Mock<IMapper>();
+            _fixture = new Fixture().Customize(new AutoMoqCustomization());
+            _mockApiClient = _fixture.Freeze<Mock<IApiClient>>();
+            _mockMapper = _fixture.Freeze<Mock<IMapper>>();
             getAthleteQueryHandler = new GetAthleteQueryHandler(_mockApiClient.Object, _mockMapper.Object);
         }
 
         [Fact]
         public async Task Handle_ReturnsGetAthleteQueryResult()
         {
-            var getAthleteApiResponse = new GetAthleteApiResponse();
-            var getAthleteQueryResult = new GetAthleteQueryResult();
+            var getAthleteApiResponse = _fixture.Create<GetAthleteApiResponse>();
+            var getAthleteQueryResult = _fixture.Create<GetAthleteQueryResult>();
             _mockApiClient.Setup(x => x.Get<GetAthleteApiResponse>(It.IsAny<GetAthleteApiRequest>())).ReturnsAsync(getAthleteApiResponse);
             _mockMapper.Setup(x => x.Map<GetAthleteQueryResult>(getAthleteApiResponse)).Returns(getAthleteQueryResult);
 
             var result = await getAthleteQueryHandler.Handle(new GetAthleteQuery(), CancellationToken.None);
 
-            Assert.Equal(result, getAthleteQueryResult);
+            result.Should().BeEquivalentTo(getAthleteQueryResult);
         }
 
         [Fact]
         public async Task Handle_ThrowsException_WhenApiCallFails()
         {
             _mockApiClient.Setup(api => api.Get<GetAthleteApiResponse>(It.IsAny<GetAthleteApiRequest>())).ThrowsAsync(new Exception("Api call failed"));
-            var query = new GetAthleteQuery();
+            var getAthleteQuery = _fixture.Create<GetAthleteQuery>();
 
-            await Assert.ThrowsAsync<Exception>(() => getAthleteQueryHandler.Handle(query, CancellationToken.None));
+            Func<Task> result = async () => await getAthleteQueryHandler.Handle(getAthleteQuery, CancellationToken.None);
+
+            await result.Should().ThrowAsync<Exception>();
         }
 
         [Fact]
         public async Task Handle_ThrowsException_WhenMappingFails()
         {
-            var getAthleteApiResponse = new GetAthleteApiResponse();
+            var getAthleteApiResponse = _fixture.Create<GetAthleteApiResponse>();
             _mockApiClient.Setup(x => x.Get<GetAthleteApiResponse>(It.IsAny<GetAthleteApiRequest>())).ReturnsAsync(getAthleteApiResponse);
             _mockMapper.Setup(x => x.Map<GetAthleteQueryResult>(getAthleteApiResponse)).Throws(new Exception("Mapping failed"));
-            var query = new GetAthleteQuery();
+            var getAthleteQuery = _fixture.Create<GetAthleteQuery>();
 
-            await Assert.ThrowsAsync<Exception>(() => getAthleteQueryHandler.Handle(query, CancellationToken.None));
+            Func<Task> result = async() => await getAthleteQueryHandler.Handle(getAthleteQuery, CancellationToken.None);
+
+            await result.Should().ThrowAsync<Exception>();
         }
     }
 }

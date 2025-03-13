@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using AutoFixture;
+using AutoFixture.AutoMoq;
+using FluentAssertions;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Moq;
 using StrideStats.InnerApi.Controllers;
+using System.Net;
 
 namespace InnerApi.UnitTests.Controllers
 {
@@ -11,10 +15,12 @@ namespace InnerApi.UnitTests.Controllers
     {
         private readonly ErrorController _controller;
         private readonly Mock<IHostEnvironment> _hostEnvironment;
+        private readonly IFixture _fixture;
 
         public ErrorControllerTests()
         {
-            _hostEnvironment = new Mock<IHostEnvironment>();
+            _fixture = new Fixture().Customize(new AutoMoqCustomization());
+            _hostEnvironment = _fixture.Freeze<Mock<IHostEnvironment>>();
             _controller = new ErrorController();
         }
 
@@ -23,8 +29,8 @@ namespace InnerApi.UnitTests.Controllers
         {
             var result = _controller.HandleError();
 
-            var problemResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, problemResult.StatusCode);
+            var problemResult = result.Should().BeOfType<ObjectResult>().Subject;
+            problemResult.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
 
         [Fact]
@@ -34,25 +40,26 @@ namespace InnerApi.UnitTests.Controllers
 
             var result = _controller.ErrorInDevelopment(_hostEnvironment.Object);
 
-            Assert.IsType<NotFoundResult>(result);
+            result.Should().BeOfType<NotFoundResult>();
         }
 
         [Fact]
         public void ErrorInDevelopment_ReturnsProblem_WhenInDevelopment()
         {
             _hostEnvironment.Setup(h => h.EnvironmentName).Returns("Development");
-            var exceptionHandlerFeatureMock = new Mock<IExceptionHandlerFeature>();
-            exceptionHandlerFeatureMock.Setup(x => x.Error).Returns(new Exception("Test exception"));
+            var exception = _fixture.Create<Exception>();
+            var exceptionHandlerFeatureMock = _fixture.Freeze<Mock<IExceptionHandlerFeature>>();
+            exceptionHandlerFeatureMock.Setup(x => x.Error).Returns(exception);
             var context = new DefaultHttpContext();
             context.Features.Set(exceptionHandlerFeatureMock.Object);
             _controller.ControllerContext.HttpContext = context;
 
             var result = _controller.ErrorInDevelopment(_hostEnvironment.Object);
 
-            var problemResult = Assert.IsType<ObjectResult>(result);
-            var problemDetails = Assert.IsType<ProblemDetails>(problemResult.Value);
-            Assert.Equal(500, problemResult.StatusCode);
-            Assert.Equal("Test exception", problemDetails.Title);
+            var problemResult = result.Should().BeOfType<ObjectResult>().Subject;
+            var problemDetails = problemResult.Value.Should().BeOfType<ProblemDetails>();
+            problemResult.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+            problemDetails.Which.Title.Should().Be(exception.Message);
         }
     }
 }

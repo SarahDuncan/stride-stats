@@ -6,6 +6,9 @@ using System.Text.Json;
 using System.Net;
 using Domain.Requests;
 using Moq.Protected;
+using FluentAssertions;
+using AutoFixture;
+using AutoFixture.AutoMoq;
 
 namespace Infrastructure.UnitTests.Api
 {
@@ -15,11 +18,14 @@ namespace Infrastructure.UnitTests.Api
         private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly ApiClient _apiClient;
         private readonly HttpClient _httpClient;
+        private readonly IFixture _fixture;
 
         public ApiClientTests()
         {
-            _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
-            _mockConfiguration = new Mock<IConfiguration>();
+            _fixture = new Fixture().Customize(new AutoMoqCustomization());
+
+            _mockHttpMessageHandler =  _fixture.Freeze<Mock<HttpMessageHandler>>();
+            _mockConfiguration = _fixture.Freeze<Mock<IConfiguration>>();
             _httpClient = new HttpClient(_mockHttpMessageHandler.Object);
             _mockConfiguration.Setup(x => x["ApiSettings:BaseUrl"]).Returns("http://localhost:5000");
             _apiClient = new ApiClient(_httpClient, _mockConfiguration.Object);
@@ -28,7 +34,8 @@ namespace Infrastructure.UnitTests.Api
         [Fact]
         public async Task Get_ReturnsDeserialisedResponse_WhenApiCallIsSuccessful()
         {
-            var apiResponse = new GetAthleteApiResponse { Id = 1 };
+            var apiRequest = _fixture.Create<GetAthleteApiRequest>();
+            var apiResponse = _fixture.Create<GetAthleteApiResponse>();
             var jsonResponse = JsonSerializer.Serialize(apiResponse);
             var httpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(jsonResponse) };
             _mockHttpMessageHandler.Protected()
@@ -37,11 +44,10 @@ namespace Infrastructure.UnitTests.Api
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(httpResponseMessage);
-            var request = new GetAthleteApiResponse();
 
-            var result = await _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest());
+            var result = await _apiClient.Get<GetAthleteApiResponse>(apiRequest);
 
-            Assert.Equal(apiResponse.Id, result.Id);
+            result.Id.Should().Be(apiResponse.Id);
         }
 
         [Fact]
@@ -53,11 +59,14 @@ namespace Infrastructure.UnitTests.Api
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
                 .ThrowsAsync(new HttpRequestException("Request failed"));
-            var request = new GetAthleteApiResponse();
+            var getAthleteApiRequest =_fixture.Create<GetAthleteApiRequest>();
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest()));
+            Func<Task> result = async () => await _apiClient.Get<GetAthleteApiResponse>(getAthleteApiRequest);
 
-            Assert.Equal($"HTTP request failed, exception: {exception.InnerException?.Message}", exception.Message);
+            var exception = await result.Should().ThrowAsync<Exception>();
+            exception.Which.InnerException.Should().NotBeNull();
+            exception.Which.InnerException.Message.Should().Be("Request failed");
+            exception.Which.Message.Should().Be($"HTTP request failed, exception: {exception.Which.InnerException?.Message}", exception.Which.Message);
         }
 
         [Fact]
@@ -70,10 +79,13 @@ namespace Infrastructure.UnitTests.Api
                     ItExpr.IsAny<HttpRequestMessage>(),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(httpResponseMessage);
-            var request = new GetAthleteApiResponse();
+            var getAthleteApiRequest = _fixture.Create<GetAthleteApiRequest>();
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest()));
-            Assert.Equal($"JSON deserialization failed, exception: {exception.InnerException!.Message}", exception.Message);
+            Func<Task> result = async () => await _apiClient.Get<GetAthleteApiResponse>(getAthleteApiRequest);
+
+            var exception = await result.Should().ThrowAsync<Exception>();
+            exception.Which.InnerException.Should().NotBeNull();
+            exception.Which.Message.Should().Be($"JSON deserialization failed, exception: {exception.Which.InnerException?.Message}", exception.Which.Message);
         }
     }
 }

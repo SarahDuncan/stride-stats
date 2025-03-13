@@ -1,5 +1,8 @@
 ﻿using Application.Queries.GetAthlete;
 using Application.Queries.GetAthletesStats;
+using AutoFixture;
+using AutoFixture.AutoMoq;
+using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -14,48 +17,53 @@ namespace InnerApi.UnitTests.Controllers
         private readonly Mock<ILogger<AthleteController>> _mockLogger;
         private readonly Mock<IMediator> _mockMediator;
         private readonly AthleteController _controller;
+        private readonly IFixture _fixture;
 
         public AthletesControllerTests()
         {
-            _mockLogger = new Mock<ILogger<AthleteController>>();
-            _mockMediator = new Mock<IMediator>();
+            _fixture = new Fixture().Customize(new AutoMoqCustomization());
+
+            _mockLogger = _fixture.Freeze<Mock<ILogger<AthleteController>>>();
+            _mockMediator = _fixture.Freeze<Mock<IMediator>>();
             _controller = new AthleteController(_mockLogger.Object, _mockMediator.Object);
         }
 
         [Fact]
         public async Task GetAthlete_ReturnsOkResult_WithAthlete()
         {
-            var athlete = new GetAthleteQueryResult();
-            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthleteQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(athlete);
+            var athleteQueryResult = _fixture.Create<GetAthleteQueryResult>();
+            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthleteQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(athleteQueryResult);
 
             var result = await _controller.GetAthlete();
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal((int)HttpStatusCode.OK, okResult.StatusCode);
-            Assert.Equal(athlete, okResult.Value);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.StatusCode.Should().Be((int)HttpStatusCode.OK);
+            okResult.Value.Should().BeEquivalentTo(athleteQueryResult);
         }
 
         [Fact]
         public async Task GetAthleteStats_ReturnsOkResult_WithAthleteStats()
         {
-            var athleteStats = new GetAthletesStatsQueryResult();
-            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthletesStatsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(athleteStats);
+            var athleteStatsQueryResult = _fixture.Create<GetAthletesStatsQueryResult>();
+            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthletesStatsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(athleteStatsQueryResult);
 
             var result = await _controller.GetAthleteStats(It.IsAny<long>());
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal((int)HttpStatusCode.OK, okResult.StatusCode);
-            Assert.Equal(athleteStats, okResult.Value);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.StatusCode.Should().Be((int)HttpStatusCode.OK);
+            okResult.Value.Should().BeEquivalentTo(athleteStatsQueryResult);
         }
 
         [Fact]
         public async Task GetAthlete_ThrowsException_LogsError()
         {
-            var exception = new Exception("Test exception");
-            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthleteQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception());
+            var exception = _fixture.Create<Exception>();
+            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthleteQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(exception);
 
-            var result = await Assert.ThrowsAsync<Exception>(() => _controller.GetAthlete());
-            Assert.Equal("An error occurred while retrieving the athlete.", result.Message);
+            Func<Task> result = _controller.GetAthlete;
+
+            var resultException = await result.Should().ThrowAsync<Exception>();
+            resultException.Which.Message.Should().Be("An error occurred while retrieving the athlete.", exception.Message);
             _mockLogger.Verify(
                    x => x.Log(
                        It.Is<LogLevel>(l => l == LogLevel.Error),
@@ -69,11 +77,13 @@ namespace InnerApi.UnitTests.Controllers
         [Fact]
         public async Task GetAthleteStats_ThrowsException_LogsError()
         {
-            var exception = new Exception("Test exception");
-            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthletesStatsQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception());
+            var exception = _fixture.Create<Exception>();
+            _mockMediator.Setup(m => m.Send(It.IsAny<GetAthletesStatsQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(exception);
 
-            var result = await Assert.ThrowsAsync<Exception>(() => _controller.GetAthleteStats(It.IsAny<long>()));
-            Assert.Equal("An error occurred while retrieving the athlete stats.", result.Message);
+            Func<Task> result = () => _controller.GetAthleteStats(It.IsAny<long>());
+
+            var resultException = await result.Should().ThrowAsync<Exception>();
+            resultException.Which.Message.Should().Be("An error occurred while retrieving the athlete stats.", exception.Message);
             _mockLogger.Verify(
                x => x.Log(
                    It.Is<LogLevel>(l => l == LogLevel.Error),
