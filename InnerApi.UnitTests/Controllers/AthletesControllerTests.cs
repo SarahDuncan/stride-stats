@@ -1,5 +1,6 @@
 ﻿using Application.Queries.GetAthlete;
 using Application.Queries.GetAthletesStats;
+using FluentAssertions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -30,9 +31,9 @@ namespace InnerApi.UnitTests.Controllers
 
             var result = await _controller.GetAthlete();
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal((int)HttpStatusCode.OK, okResult.StatusCode);
-            Assert.Equal(athlete, okResult.Value);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.StatusCode.Should().Be((int)HttpStatusCode.OK);
+            okResult.Value.Should().BeEquivalentTo(athlete);
         }
 
         [Fact]
@@ -43,9 +44,9 @@ namespace InnerApi.UnitTests.Controllers
 
             var result = await _controller.GetAthleteStats(It.IsAny<long>());
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal((int)HttpStatusCode.OK, okResult.StatusCode);
-            Assert.Equal(athleteStats, okResult.Value);
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.StatusCode.Should().Be((int)HttpStatusCode.OK);
+            okResult.Value.Should().BeEquivalentTo(athleteStats);
         }
 
         [Fact]
@@ -54,8 +55,10 @@ namespace InnerApi.UnitTests.Controllers
             var exception = new Exception("Test exception");
             _mockMediator.Setup(m => m.Send(It.IsAny<GetAthleteQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception());
 
-            var result = await Assert.ThrowsAsync<Exception>(() => _controller.GetAthlete());
-            Assert.Equal("An error occurred while retrieving the athlete.", result.Message);
+            Func<Task> result = _controller.GetAthlete;
+
+            var resultException = await result.Should().ThrowAsync<Exception>();
+            resultException.Which.Message.Should().Be("An error occurred while retrieving the athlete.", resultException.Which.Message);
             _mockLogger.Verify(
                    x => x.Log(
                        It.Is<LogLevel>(l => l == LogLevel.Error),
@@ -72,8 +75,10 @@ namespace InnerApi.UnitTests.Controllers
             var exception = new Exception("Test exception");
             _mockMediator.Setup(m => m.Send(It.IsAny<GetAthletesStatsQuery>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception());
 
-            var result = await Assert.ThrowsAsync<Exception>(() => _controller.GetAthleteStats(It.IsAny<long>()));
-            Assert.Equal("An error occurred while retrieving the athlete stats.", result.Message);
+            Func<Task> result = () => _controller.GetAthleteStats(It.IsAny<long>());
+
+            var resultException = await result.Should().ThrowAsync<Exception>();
+            resultException.Which.Message.Should().Be("An error occurred while retrieving the athlete stats.", resultException.Which.Message);
             _mockLogger.Verify(
                x => x.Log(
                    It.Is<LogLevel>(l => l == LogLevel.Error),

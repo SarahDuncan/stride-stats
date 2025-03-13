@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Net;
 using Domain.Requests;
 using Moq.Protected;
+using FluentAssertions;
+using System;
 
 namespace Infrastructure.UnitTests.Api
 {
@@ -41,7 +43,7 @@ namespace Infrastructure.UnitTests.Api
 
             var result = await _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest());
 
-            Assert.Equal(apiResponse.Id, result.Id);
+            apiResponse.Id.Should().Be(result.Id);
         }
 
         [Fact]
@@ -55,9 +57,10 @@ namespace Infrastructure.UnitTests.Api
                 .ThrowsAsync(new HttpRequestException("Request failed"));
             var request = new GetAthleteApiResponse();
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest()));
+            Func<Task> result = async () => await _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest());
 
-            Assert.Equal($"HTTP request failed, exception: {exception.InnerException?.Message}", exception.Message);
+            var exception = await result.Should().ThrowAsync<Exception>();
+            exception.Which.Message.Should().Be($"HTTP request failed, exception: {exception.Which.InnerException?.Message}", exception.Which.Message);
         }
 
         [Fact]
@@ -72,8 +75,10 @@ namespace Infrastructure.UnitTests.Api
                 .ReturnsAsync(httpResponseMessage);
             var request = new GetAthleteApiResponse();
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest()));
-            Assert.Equal($"JSON deserialization failed, exception: {exception.InnerException!.Message}", exception.Message);
+            Func<Task> result = async () => await _apiClient.Get<GetAthleteApiResponse>(new GetAthleteApiRequest());
+
+            var exception = await result.Should().ThrowAsync<Exception>();
+            exception.Which.Message.Should().Be($"JSON deserialization failed, exception: {exception.Which.InnerException?.Message}", exception.Which.Message);
         }
     }
 }

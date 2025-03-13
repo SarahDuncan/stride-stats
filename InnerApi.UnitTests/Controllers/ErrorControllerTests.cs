@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using FluentAssertions;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using Moq;
 using StrideStats.InnerApi.Controllers;
+using System.Net;
 
 namespace InnerApi.UnitTests.Controllers
 {
@@ -23,8 +25,8 @@ namespace InnerApi.UnitTests.Controllers
         {
             var result = _controller.HandleError();
 
-            var problemResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, problemResult.StatusCode);
+            var problemResult = result.Should().BeOfType<ObjectResult>().Subject;
+            problemResult.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
         }
 
         [Fact]
@@ -34,7 +36,7 @@ namespace InnerApi.UnitTests.Controllers
 
             var result = _controller.ErrorInDevelopment(_hostEnvironment.Object);
 
-            Assert.IsType<NotFoundResult>(result);
+            result.Should().BeOfType<NotFoundResult>();
         }
 
         [Fact]
@@ -49,10 +51,10 @@ namespace InnerApi.UnitTests.Controllers
 
             var result = _controller.ErrorInDevelopment(_hostEnvironment.Object);
 
-            var problemResult = Assert.IsType<ObjectResult>(result);
-            var problemDetails = Assert.IsType<ProblemDetails>(problemResult.Value);
-            Assert.Equal(500, problemResult.StatusCode);
-            Assert.Equal("Test exception", problemDetails.Title);
+            var problemResult = result.Should().BeOfType<ObjectResult>().Subject;
+            var problemDetails = problemResult.Value.Should().BeOfType<ProblemDetails>();
+            problemResult.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+            problemDetails.Which.Title.Should().Be("Test exception");
         }
     }
 }
