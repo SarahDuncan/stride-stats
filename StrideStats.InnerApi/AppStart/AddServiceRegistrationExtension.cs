@@ -34,6 +34,9 @@ namespace StrideStats.InnerApi.AppStart
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
                 options.IncludeXmlComments(xmlPath);
             });
+
+            // Add HealthChecks
+            services.AddHealthChecks();
         }
 
         public class AuthorizationHandler : DelegatingHandler

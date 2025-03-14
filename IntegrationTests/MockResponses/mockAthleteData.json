@@ -1,0 +1,22 @@
+{
+  "id": 12345678,
+  "username": "john_doe",
+  "resourceState": 2,
+  "firstName": "John",
+  "lastName": "Doe",
+  "bio": "avid runner and cyclist",
+  "city": "San Francisco",
+  "state": "CA",
+  "country": "USA",
+  "sex": "M",
+  "premium": true,
+  "summit": true,
+  "createdAt": "2020-01-15T10:00:00Z",
+  "updatedAt": "2025-03-10T12:00:00Z",
+  "badgeTypeId": 1,
+  "weight": 75.5,
+  "profileMedium": "https://example.com/pictures/athletes/12345678/medium.jpg",
+  "profile": "https://example.com/pictures/athletes/12345678/large.jpg",
+  "friend": null,
+  "follower": null
+}
