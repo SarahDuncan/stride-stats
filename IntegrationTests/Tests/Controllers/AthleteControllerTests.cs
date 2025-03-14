@@ -10,45 +10,27 @@ namespace IntegrationTests.Tests.Controllers
 
         public AthleteControllerTests(WebApplicationFactory<Program> webApplicationFactory)
         {
-            _httpClient = webApplicationFactory.CreateDefaultClient();
+            _httpClient = webApplicationFactory.CreateDefaultClient(new Uri("https://localhost/api/athlete"));
         }
 
         [Fact]
         public async Task GetAthlete_ReturnsSuccessStatusCode()
         {
-            var response = await _httpClient.GetAsync("/api/athlete");
+            var response = await _httpClient.GetAsync("");
 
             response.EnsureSuccessStatusCode();
         }
 
         [Fact]
-        public async Task GetAthlete_ReturnsExpectedContentType()
+        public async Task GetAthlete_ReturnsExpectedResponse()
         {
-            var response = await _httpClient.GetAsync("/api/athlete");
+            var expectedResponse = JsonSerializer.Deserialize<GetAthleteApiResponse>
+                (File.ReadAllText("MockResponses/GetAthleteApiResponse.json"));
 
-            Assert.Equal("application/json", response?.Content?.Headers?.ContentType?.MediaType);
-        }
+            var model = await _httpClient.GetFromJsonAsync<GetAthleteApiResponse>("");
 
-        [Fact]
-        public async Task GetAthlete_ReturnsContent()
-        {
-            var response = await _httpClient.GetAsync("/api/athlete");
-
-            Assert.True(response.Content.Headers.ContentLength > 0);
-        }
-
-        [Fact]
-        public async Task GetAthlete_ReturnsExpectedJson()
-        {
-            var responseStream = await _httpClient.GetStreamAsync("/api/athlete");
-
-            var response = await JsonSerializer.DeserializeAsync<GetAthleteApiResponse>
-                (responseStream, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-            Assert.NotNull(response?.FirstName);
+            Assert.Equal(expectedResponse, model);
+            Assert.NotNull(model?.FirstName);
         }
     }
 }
