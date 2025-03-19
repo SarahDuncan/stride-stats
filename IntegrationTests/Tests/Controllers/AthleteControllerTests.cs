@@ -17,7 +17,6 @@ namespace IntegrationTests.Tests.Controllers
         public AthleteControllerTests(WebApplicationFactory<Program> factory)
         {
             _wireMockServer = WireMockServer.Start();
-            Console.WriteLine($"WireMock server started at {_wireMockServer.Urls[0]}");
 
             _factory = factory.WithWebHostBuilder(builder =>
             {
@@ -28,16 +27,6 @@ namespace IntegrationTests.Tests.Controllers
                 {"ApiSettings:BaseUrl", _wireMockServer.Urls[0] },
                 {"ApiSettings:AccessToken", "mock_token" }
             });
-                });
-
-                // Add this to verify the configuration is correctly applied
-                builder.ConfigureServices(services =>
-                {
-                    services.AddLogging(logging =>
-                    {
-                        logging.AddConsole();
-                        logging.SetMinimumLevel(LogLevel.Debug);
-                    });
                 });
             });
 
