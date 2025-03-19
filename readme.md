@@ -4,4 +4,4 @@ Includes:
 - ASP.NET Core Web API
 - Unit tests with xUnit
 - Integration tests with xUnit and WireMock.Net
-- BDD tests with Specflow
+- BDD tests with Specflow (Reqnroll + NUnit + Gherkin + WireMock.Net)
