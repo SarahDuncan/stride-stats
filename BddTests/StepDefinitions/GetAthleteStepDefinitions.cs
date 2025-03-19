@@ -37,6 +37,13 @@ namespace BddTests.StepDefinitions
                 .RespondWith(Response.Create().WithStatusCode(200).WithBodyAsJson(expectedResponseJson));
         }
 
+        [Given(@"the athlete is not authorised")]
+        public void GivenTheAthleteIsNotAuthorised()
+        {
+            _server.Given(Request.Create().WithPath("/api/athlete").UsingGet())
+                .RespondWith(Response.Create().WithStatusCode(401));
+        }
+
         [When(@"I send a GET request to ""(.*)""")]
         public async Task WhenISendAGETRequestTo(string url)
         {
