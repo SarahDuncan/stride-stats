@@ -43,6 +43,8 @@ public class Program
 
         app.UseHttpsRedirection();
 
+        app.UseCors("AllowSpecificOrigins");
+
         app.UseAuthorization();
 
         app.MapControllers();

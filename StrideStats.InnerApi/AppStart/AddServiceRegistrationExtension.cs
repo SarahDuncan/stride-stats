@@ -2,7 +2,8 @@
 using Application.Mappings;
 using Application.Queries.GetAthlete;
 using Domain.Interfaces.Api;
-using System.Net.Http.Headers;
+using Domain.Interfaces.Cache;
+using Infrastructure.Cache;
 using System.Reflection;
 
 namespace StrideStats.InnerApi.AppStart
@@ -12,8 +13,7 @@ namespace StrideStats.InnerApi.AppStart
         public static void AddServiceRegistration(this IServiceCollection services, IConfiguration configuration)
         {
             // Add HttpClient
-            services.AddHttpClient<IApiClient, ApiClient>()
-                .AddHttpMessageHandler(() => new AuthorizationHandler(configuration));
+            services.AddHttpClient<IApiClient, ApiClient>();
 
             // Add MediatR
             services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
@@ -25,10 +25,10 @@ namespace StrideStats.InnerApi.AppStart
             // Add Swagger
             services.AddSwaggerGen(options =>
             {
-                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
-                { 
-                    Title = "StrideStats API", 
-                    Version = "v1" ,
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "StrideStats API",
+                    Version = "v1",
                     Description = "Consumes the Strava V3 API"
                 });
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
@@ -37,29 +37,10 @@ namespace StrideStats.InnerApi.AppStart
 
             // Add HealthChecks
             services.AddHealthChecks();
-        }
 
-        public class AuthorizationHandler : DelegatingHandler
-        {
-            private readonly IConfiguration _configuration;
-
-            public AuthorizationHandler(IConfiguration configuration)
-            {
-                _configuration = configuration;
-            }
-
-            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            {
-                var accessToken = await GetAccessTokenAsync();
-
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                return await base.SendAsync(request, cancellationToken);
-            }
-
-            private Task<string> GetAccessTokenAsync()
-            {
-                return Task.FromResult(_configuration["ApiSettings:AccessToken"]);
-            }
+            // Add Memory Cache
+            services.AddMemoryCache();
+            services.AddSingleton<ITokenService, TokenService>();
         }
     }
 }
