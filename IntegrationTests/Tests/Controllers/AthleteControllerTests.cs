@@ -1,4 +1,5 @@
-﻿using Domain.Responses;
+﻿using AutoFixture;
+using Domain.Responses;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Text.Json;
 using WireMock.RequestBuilders;
@@ -13,6 +14,7 @@ namespace IntegrationTests.Tests.Controllers
         private readonly WebApplicationFactory<Program> _factory;
         private readonly WireMockServer _wireMockServer;
         private readonly JsonSerializerOptions jsonOptions;
+        private readonly IFixture _fixture;
 
         public AthleteControllerTests(WebApplicationFactory<Program> factory)
         {
@@ -35,6 +37,7 @@ namespace IntegrationTests.Tests.Controllers
             {
                 PropertyNameCaseInsensitive = true
             };
+            _fixture = new Fixture();
         }
 
         [Fact]
@@ -67,8 +70,56 @@ namespace IntegrationTests.Tests.Controllers
             var response = await _httpClient.GetAsync("/api/athlete");
             var content = await response.Content.ReadAsStringAsync();
             var model = await response.Content.ReadFromJsonAsync<GetAthleteApiResponse>(jsonOptions);
-            Assert.NotNull(model);
-            Assert.Equal(expectedResponse?.FirstName, model.FirstName);
+
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(model);
+                Assert.Equal(expectedResponse?.FirstName, model.FirstName);
+            });
+        }
+
+        [Fact]
+        public async Task GetAthletesStats_ReturnsSuccessStatusCode()
+        {
+            var athleteId = _fixture.Create<long>();
+            var expectedResponseJson = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "MockResponses", "mockAthletesStatsData.json"));
+            _wireMockServer.Given(Request.Create()
+                .WithPath($"/athletes/{athleteId}/stats")
+                .UsingGet())
+                .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(expectedResponseJson));
+
+            var response = await _httpClient.GetAsync($"/api/athlete/{athleteId}/stats");
+            Console.WriteLine(response.RequestMessage.RequestUri);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task GetAthletesStats_ReturnsExpectedResponse()
+        {
+            var athleteId = _fixture.Create<long>();
+            var expectedResponseJson = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "MockResponses", "mockAthletesStatsData.json"));
+            var expectedResponse = JsonSerializer.Deserialize<GetAthletesStatsApiResponse>(expectedResponseJson, jsonOptions);
+            _wireMockServer.Given(Request.Create()
+                .WithPath($"/athletes/{athleteId}/stats")
+                .UsingGet())
+                .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(expectedResponseJson));
+
+            var response = await _httpClient.GetAsync($"/api/athlete/{athleteId}/stats");
+            var content = await response.Content.ReadAsStringAsync();
+            var model = await response.Content.ReadFromJsonAsync<GetAthletesStatsApiResponse>(jsonOptions);
+
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(model);
+                Assert.Equal(expectedResponse?.AllRunTotals, model.AllRunTotals);
+            });
         }
     }
 }
