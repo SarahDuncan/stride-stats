@@ -1,5 +1,7 @@
 ﻿using AutoFixture;
+using Domain.Interfaces.Cache;
 using Domain.Responses;
+using IntegrationTests.MockServices;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Text.Json;
 using WireMock.RequestBuilders;
@@ -19,7 +21,6 @@ namespace IntegrationTests.Tests.Controllers
         public AthleteControllerTests(WebApplicationFactory<Program> factory)
         {
             _wireMockServer = WireMockServer.Start();
-
             _factory = factory.WithWebHostBuilder(builder =>
             {
                 builder.ConfigureAppConfiguration((context, config) =>
@@ -27,8 +28,19 @@ namespace IntegrationTests.Tests.Controllers
                     config.AddInMemoryCollection(new Dictionary<string, string>()
             {
                 {"ApiSettings:BaseUrl", _wireMockServer.Urls[0] },
-                {"ApiSettings:AccessToken", "mock_token" }
+                {"ApiSettings:ClientId", "mock_client_id" },
+                {"ApiSettings:ClientSecret", "mock_client_secret" },
+                {"ApiSettings:RedirectUri", "https://mock.redirecturi.com" },
+                {"ApiSettings:AuthUrl", "https://mock.authurl.com" },
+                {"ApiSettings:TokenUrl", "https://mock.tokenurl.com" }
             });
+                });
+
+                builder.ConfigureServices(services =>
+                {
+                    var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(ITokenService));
+                    if (descriptor is not null) services.Remove(descriptor);
+                    services.AddSingleton<ITokenService, MockTokenService>();
                 });
             });
 
