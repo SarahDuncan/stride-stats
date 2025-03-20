@@ -9,6 +9,7 @@ using Moq.Protected;
 using FluentAssertions;
 using AutoFixture;
 using AutoFixture.AutoMoq;
+using Domain.Interfaces.Cache;
 
 namespace Infrastructure.UnitTests.Api
 {
@@ -19,6 +20,7 @@ namespace Infrastructure.UnitTests.Api
         private readonly ApiClient _apiClient;
         private readonly HttpClient _httpClient;
         private readonly IFixture _fixture;
+        private readonly Mock<ITokenService> _tokenService;
 
         public ApiClientTests()
         {
@@ -26,9 +28,11 @@ namespace Infrastructure.UnitTests.Api
 
             _mockHttpMessageHandler =  _fixture.Freeze<Mock<HttpMessageHandler>>();
             _mockConfiguration = _fixture.Freeze<Mock<IConfiguration>>();
+            _tokenService = _fixture.Freeze<Mock<ITokenService>>();
             _httpClient = new HttpClient(_mockHttpMessageHandler.Object);
             _mockConfiguration.Setup(x => x["ApiSettings:BaseUrl"]).Returns("http://localhost:5000");
-            _apiClient = new ApiClient(_httpClient, _mockConfiguration.Object);
+            _tokenService.Setup(x => x.GetTokenAsync()).ReturnsAsync("mock-token");
+            _apiClient = new ApiClient(_httpClient, _mockConfiguration.Object, _tokenService.Object);
         }
 
         [Fact]
