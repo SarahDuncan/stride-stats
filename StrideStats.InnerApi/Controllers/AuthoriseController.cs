@@ -10,7 +10,7 @@ namespace StrideStats.InnerApi.Controllers
     /// <summary>
     /// Controller for handling authorisation.
     /// </summary>
-    [ApiExplorerSettings(IgnoreApi = true)]
+    //[ApiExplorerSettings(IgnoreApi = true)]
     [Route("api/[controller]")]
     [ApiController]
     public class AuthoriseController : ControllerBase
@@ -84,7 +84,7 @@ namespace StrideStats.InnerApi.Controllers
             var tokenResponse = JsonSerializer.Deserialize<StravaTokenModel>(content);
 
             // todo: move this mapping
-            await _tokenService.StoreTokenAsync(new StravaTokenResponse
+            await _tokenService.StoreTokenAsync(new CreateAccessTokenApiResponse
             {
                 AccessToken = tokenResponse.AccessToken,
                 RefreshToken = tokenResponse.RefreshToken,

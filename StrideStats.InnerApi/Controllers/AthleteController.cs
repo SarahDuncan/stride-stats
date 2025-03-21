@@ -1,4 +1,5 @@
-﻿using Application.Queries.GetAthlete;
+﻿using Application.Commands.UpdateAthlete;
+using Application.Queries.GetAthlete;
 using Application.Queries.GetAthletesStats;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -72,6 +73,31 @@ namespace StrideStats.InnerApi.Controllers
             {
                 _logger.LogError(ex, "An error occurred while retrieving the athlete stats.");
                 throw new Exception($"An error occurred while retrieving the athlete stats.", ex);
+            }
+        }
+
+        /// <summary>
+        /// Updates an athlete's weight.
+        /// </summary>
+        /// <param name="weight">The updated weight.</param>
+        /// <returns>
+        /// An <see cref="IActionResult"/> containing the athlete's data if successful.
+        /// </returns>
+        /// <exception cref="Exception">
+        /// Thrown when an error occurs while updating the athlete.
+        /// </exception> 
+        [HttpPut("{weight}")]
+        public async Task<IActionResult> UpdateAthlete(float weight)
+        {
+            try
+            {
+                var result = await _mediator.Send(new UpdateAthleteCommand(weight));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while updating the athlete.");
+                throw new Exception($"An error occurred while updating the athlete.", ex);
             }
         }
     }

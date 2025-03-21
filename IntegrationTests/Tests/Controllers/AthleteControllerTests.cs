@@ -1,9 +1,11 @@
 ﻿using AutoFixture;
 using Domain.Interfaces.Cache;
+using Domain.Requests;
 using Domain.Responses;
 using IntegrationTests.MockServices;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Text.Json;
+using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -74,11 +76,13 @@ namespace IntegrationTests.Tests.Controllers
         {
             var expectedResponseJson = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "MockResponses", "mockAthleteData.json"));
             var expectedResponse = JsonSerializer.Deserialize<GetAthleteApiResponse>(expectedResponseJson, jsonOptions);
-            _wireMockServer.Given(Request.Create().WithPath("/athlete").UsingGet())
+            _wireMockServer.Given(Request.Create()
+                .WithPath("/athlete")
+                .UsingGet())
                 .RespondWith(Response.Create()
-                    .WithStatusCode(200)
-                    .WithHeader("Content-Type", "application/json")
-                    .WithBody(expectedResponseJson));
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(expectedResponseJson));
             var response = await _httpClient.GetAsync("/api/athlete");
             var content = await response.Content.ReadAsStringAsync();
             var model = await response.Content.ReadFromJsonAsync<GetAthleteApiResponse>(jsonOptions);
@@ -131,6 +135,51 @@ namespace IntegrationTests.Tests.Controllers
             {
                 Assert.NotNull(model);
                 Assert.Equal(expectedResponse?.AllRunTotals, model.AllRunTotals);
+            });
+        }
+
+        [Fact]
+        public async Task UpdateAthlete_ReturnsSuccessStatusCode()
+        {
+            var putContent = _fixture.Create<UpdateAthleteApiRequestData>();
+            var expectedResponseJson = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "MockResponses", "mockAthleteData.json"));
+            _wireMockServer.Given(Request.Create()
+                .WithPath("/athlete")
+                .WithBody(new JsonMatcher(JsonSerializer.Serialize(putContent)))
+                .UsingPut())
+                .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(expectedResponseJson));
+
+            var response = await _httpClient.PutAsJsonAsync($"/api/athlete/{putContent.Weight}", putContent);
+
+            response.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task UpdateAthlete_ReturnsExpectedResponse()
+        {
+            var putContent = _fixture.Create<UpdateAthleteApiRequestData>();
+            var expectedResponseJson = File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "MockResponses", "mockAthleteData.json"));
+            var expectedResponse = JsonSerializer.Deserialize<UpdateAthleteApiResponse>(expectedResponseJson, jsonOptions);
+            _wireMockServer.Given(Request.Create()
+                .WithPath("/athlete")
+                .WithBody(new JsonMatcher(JsonSerializer.Serialize(putContent)))
+                .UsingPut())
+                .RespondWith(Response.Create()
+                .WithStatusCode(200)
+                .WithHeader("Content-Type", "application/json")
+                .WithBody(expectedResponseJson));
+
+            var response = await _httpClient.PutAsJsonAsync($"api/athlete/{putContent.Weight}", putContent);
+            var content = await response.Content.ReadAsStringAsync();
+            var model = await response.Content.ReadFromJsonAsync<UpdateAthleteApiResponse>(jsonOptions);
+
+            Assert.Multiple(() =>
+            {
+                Assert.NotNull(model);
+                Assert.Equal(expectedResponse?.FirstName, model.FirstName);
             });
         }
     }

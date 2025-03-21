@@ -2,7 +2,7 @@
 
 namespace Domain.Responses
 {
-    public class StravaTokenResponse
+    public class CreateAccessTokenApiResponse
     {
         [JsonPropertyName("access_token")]
         public string AccessToken { get; set; }

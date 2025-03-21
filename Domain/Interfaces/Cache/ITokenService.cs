@@ -5,7 +5,7 @@ namespace Domain.Interfaces.Cache
     public interface ITokenService
     {
         Task<string> GetTokenAsync();
-        Task StoreTokenAsync(StravaTokenResponse tokenResponse);
+        Task StoreTokenAsync(CreateAccessTokenApiResponse tokenResponse);
         Task<string> GetRefreshTokenAsync();
     }
 }

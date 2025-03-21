@@ -15,7 +15,7 @@ namespace IntegrationTests.MockServices
             return Task.FromResult("mock_access_token");
         }
 
-        public Task StoreTokenAsync(StravaTokenResponse tokenResponse)
+        public Task StoreTokenAsync(CreateAccessTokenApiResponse tokenResponse)
         {
             return Task.CompletedTask;
         }

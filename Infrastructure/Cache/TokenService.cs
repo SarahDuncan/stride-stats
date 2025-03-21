@@ -1,8 +1,9 @@
-﻿using Domain.Interfaces.Cache;
+﻿using Domain.Interfaces.Api;
+using Domain.Interfaces.Cache;
+using Domain.Requests;
 using Domain.Responses;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using System.Text.Json;
 
 namespace Infrastructure.Cache
 {
@@ -11,16 +12,39 @@ namespace Infrastructure.Cache
         private readonly IMemoryCache _cache;
         private readonly TimeSpan _tokenLifetime = TimeSpan.FromHours(6);
         private readonly IConfiguration _configuration;
-        private readonly HttpClient _httpClient;
+        private readonly IApiClient _apiClient;
 
-        public TokenService(IMemoryCache cache, IConfiguration configuration, HttpClient httpClient)
+        public TokenService(IMemoryCache cache, IConfiguration configuration, IApiClient apiClient)
         {
             _cache = cache;
             _configuration = configuration;
-            _httpClient = httpClient;
+            _apiClient = apiClient;
         }
 
-        public async Task<string> GetRefreshTokenAsync()
+        public virtual async Task<string> GetRefreshTokenAsync()
+        {
+            var request = CreateRefreshTokenRequest();
+            var response = await _apiClient.Post<CreateAccessTokenApiResponse>(request);
+            await StoreTokenAsync(response);
+            return response.AccessToken;
+        }
+
+        public virtual async Task<string> GetTokenAsync()
+        {
+            if (_cache.TryGetValue("AccessToken", out string token))
+                return token;
+
+            return await GetRefreshTokenAsync();
+        }
+
+        public Task StoreTokenAsync(CreateAccessTokenApiResponse apiResponse)
+        {
+            _cache.Set("AccessToken", apiResponse.AccessToken, _tokenLifetime);
+            _cache.Set("RefreshToken", apiResponse.RefreshToken, TimeSpan.FromDays(30));
+            return Task.CompletedTask;
+        }
+
+        private IPostApiRequest CreateRefreshTokenRequest()
         {
             if (!_cache.TryGetValue("RefreshToken", out string refreshToken))
                 throw new UnauthorizedAccessException("Refresh token not found.");
@@ -33,30 +57,7 @@ namespace Infrastructure.Cache
                 new KeyValuePair<string, string>("grant_type", "refresh_token")
             });
 
-            var response = await _httpClient.PostAsync(_configuration["ApiSettings:TokenUrl"], tokenRequest);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
-            var newToken = JsonSerializer.Deserialize<StravaTokenResponse>(content);
-
-            await StoreTokenAsync(newToken);
-
-            return newToken.AccessToken;
-        }
-
-        public async Task<string> GetTokenAsync()
-        {
-            if (_cache.TryGetValue("AccessToken", out string token))
-                return token;
-
-            return await GetRefreshTokenAsync();
-        }
-
-        public Task StoreTokenAsync(StravaTokenResponse tokenResponse)
-        {
-            _cache.Set("AccessToken", tokenResponse.AccessToken, _tokenLifetime);
-            _cache.Set("RefreshToken", tokenResponse.RefreshToken, TimeSpan.FromDays(30));
-            return Task.CompletedTask;
+            return new CreateAccessTokenApiRequest(_configuration["ApiSettings:TokenUrl"], tokenRequest);
         }
     }
 }

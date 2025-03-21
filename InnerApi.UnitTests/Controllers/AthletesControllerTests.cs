@@ -1,4 +1,5 @@
-﻿using Application.Queries.GetAthlete;
+﻿using Application.Commands.UpdateAthlete;
+using Application.Queries.GetAthlete;
 using Application.Queries.GetAthletesStats;
 using AutoFixture;
 using AutoFixture.AutoMoq;
@@ -55,6 +56,19 @@ namespace InnerApi.UnitTests.Controllers
         }
 
         [Fact]
+        public async Task UpdateAthlete_ReturnsOkResult_WithAthleteData()
+        {
+            var updateAthleteCommandResult = _fixture.Create<UpdateAthleteCommandResult>();
+            _mockMediator.Setup(m => m.Send(It.IsAny<UpdateAthleteCommand>(), It.IsAny<CancellationToken>())).ReturnsAsync(updateAthleteCommandResult);
+
+            var result = await _controller.UpdateAthlete(It.IsAny<float>());
+
+            var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+            okResult.StatusCode.Should().Be((int)HttpStatusCode.OK);
+            okResult.Value.Should().BeEquivalentTo(updateAthleteCommandResult);
+        }
+
+        [Fact]
         public async Task GetAthlete_ThrowsException_LogsError()
         {
             var exception = _fixture.Create<Exception>();
@@ -92,6 +106,26 @@ namespace InnerApi.UnitTests.Controllers
                    It.IsAny<Exception>(),
                    It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
                Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAthlete_ThrowsException_LogsError()
+        {
+            var exception = _fixture.Create<Exception>();
+            _mockMediator.Setup(m => m.Send(It.IsAny<UpdateAthleteCommand>(), It.IsAny<CancellationToken>())).ThrowsAsync(exception);
+
+            Func<Task> result = () => _controller.UpdateAthlete(It.IsAny<float>());
+
+            var resultException = await result.Should().ThrowAsync<Exception>();
+            resultException.Which.Message.Should().Be("An error occurred while updating the athlete.", exception.Message);
+            _mockLogger.Verify(
+                   x => x.Log(
+                       It.Is<LogLevel>(l => l == LogLevel.Error),
+                       It.IsAny<EventId>(),
+                       It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("An error occurred while updating the athlete.")),
+                       It.IsAny<Exception>(),
+                       It.IsAny<Func<It.IsAnyType, Exception, string>>()!),
+                   Times.Once);
         }
     }
 }

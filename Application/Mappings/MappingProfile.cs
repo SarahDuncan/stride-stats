@@ -1,4 +1,5 @@
-﻿using Application.Queries.Common;
+﻿using Application.Commands.UpdateAthlete;
+using Application.Queries.Common;
 using Application.Queries.GetAthlete;
 using Application.Queries.GetAthletesStats;
 using AutoMapper;
@@ -14,6 +15,7 @@ namespace Application.Mappings
             CreateMap<GetAthleteApiResponse, GetAthleteQueryResult>();
             CreateMap<GetAthletesStatsApiResponse, GetAthletesStatsQueryResult>();
             CreateMap<Totals, TotalsResult>();
+            CreateMap<UpdateAthleteApiResponse, UpdateAthleteCommandResult>();
         }
     }
 }
